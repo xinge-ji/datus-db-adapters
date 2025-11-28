@@ -228,7 +228,8 @@ class DorisConnector(MySQLConnector, CatalogSupportMixin, MaterializedViewSuppor
 
         Doris returns an error for async materialized views when queried via
         ``SHOW CREATE TABLE``. If we detect that message, retry with the
-        MATERIALIZED VIEW variant so DDL retrieval succeeds.
+        ``SHOW CREATE ASYNC MATERIALIZED VIEW`` command so DDL retrieval
+        succeeds.
         """
         try:
             return super()._show_create(full_name, create_type)
@@ -237,9 +238,11 @@ class DorisConnector(MySQLConnector, CatalogSupportMixin, MaterializedViewSuppor
 
             if "not support async materialized view" in error_msg or "show create materialized view" in error_msg:
                 try:
-                    return super()._show_create(full_name, "MATERIALIZED VIEW")
+                    return super()._show_create(full_name, "ASYNC MATERIALIZED VIEW")
                 except Exception as mv_error:
-                    logger.warning(f"Fallback SHOW CREATE MATERIALIZED VIEW failed for {full_name}: {mv_error}")
+                    logger.warning(
+                        f"Fallback SHOW CREATE ASYNC MATERIALIZED VIEW failed for {full_name}: {mv_error}"
+                    )
 
             raise
 
