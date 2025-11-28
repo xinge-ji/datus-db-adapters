@@ -194,32 +194,28 @@ def test_get_materialized_views_with_ddl(connector: DorisConnector):
         assert len(identifier_parts) == 3
 
 
-def test_show_create_async_materialized_view_fallback(monkeypatch, connector: DorisConnector):
-    """Ensure SHOW CREATE retries with ASYNC MATERIALIZED VIEW when needed."""
+def test_show_create_async_materialized_view_preferred(monkeypatch, connector: DorisConnector):
+    """Ensure SHOW CREATE uses ASYNC MATERIALIZED VIEW for Doris MVs."""
 
-    calls = {"count": 0}
+    calls = []
 
     def fake_execute(sql):
-        calls["count"] += 1
-        if calls["count"] == 1:
-            assert "SHOW CREATE TABLE" in sql
-            raise Exception("errCode = 2, detailMessage = not support async materialized view, please use `show create materialized view`")
-
+        calls.append(sql)
         assert "SHOW CREATE ASYNC MATERIALIZED VIEW" in sql
 
         import pandas as pd
 
         return pd.DataFrame(
-            [["mv", "CREATE ASYNC MATERIALIZED VIEW mv AS ..."]],
-            columns=["Name", "Create Async Materialized View"],
+            [["mv", "CREATE MATERIALIZED VIEW mv AS ..."]],
+            columns=["Materialized View", "Create Materialized View"],
         )
 
     monkeypatch.setattr(connector, "_execute_pandas", fake_execute)
 
-    ddl = connector._show_create("`internal`.`db`.`mv`", "TABLE")
+    ddl = connector._show_create("`internal`.`db`.`mv`", "MATERIALIZED VIEW")
 
-    assert ddl == "CREATE ASYNC MATERIALIZED VIEW mv AS ..."
-    assert calls["count"] == 2
+    assert ddl == "CREATE MATERIALIZED VIEW mv AS ..."
+    assert len(calls) == 1
 
 
 # ==================== Sample Data Tests ====================

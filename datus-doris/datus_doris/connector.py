@@ -224,27 +224,23 @@ class DorisConnector(MySQLConnector, CatalogSupportMixin, MaterializedViewSuppor
     @override
     def _show_create(self, full_name: str, create_type: str) -> str:
         """
-        Execute SHOW CREATE with Doris-specific fallback for materialized views.
+        Execute SHOW CREATE with Doris-specific handling for materialized views.
 
-        Doris returns an error for async materialized views when queried via
-        ``SHOW CREATE TABLE``. If we detect that message, retry with the
-        ``SHOW CREATE ASYNC MATERIALIZED VIEW`` command so DDL retrieval
-        succeeds.
+        Doris supports using ``SHOW CREATE ASYNC MATERIALIZED VIEW`` to obtain
+        DDL for both async and regular materialized views. When requesting
+        materialized view DDL, prefer that command first, then fall back to the
+        provided ``create_type`` if needed.
         """
-        try:
-            return super()._show_create(full_name, create_type)
-        except Exception as e:
-            error_msg = str(e).lower()
+        if "materialized view" in create_type.lower():
+            try:
+                return super()._show_create(full_name, "ASYNC MATERIALIZED VIEW")
+            except Exception as mv_error:
+                logger.warning(
+                    f"SHOW CREATE ASYNC MATERIALIZED VIEW failed for {full_name}: {mv_error}, retrying with {create_type}"
+                )
+                return super()._show_create(full_name, create_type)
 
-            if "not support async materialized view" in error_msg or "show create materialized view" in error_msg:
-                try:
-                    return super()._show_create(full_name, "ASYNC MATERIALIZED VIEW")
-                except Exception as mv_error:
-                    logger.warning(
-                        f"Fallback SHOW CREATE ASYNC MATERIALIZED VIEW failed for {full_name}: {mv_error}"
-                    )
-
-            raise
+        return super()._show_create(full_name, create_type)
 
     # ==================== Database Management ====================
 
