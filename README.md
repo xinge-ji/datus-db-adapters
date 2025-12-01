@@ -19,6 +19,7 @@ Plugin Adapters (Independent packages, install as needed)
 └── Native SDK Adapters
     ├── datus-snowflake
     ├── datus-clickzetta
+    ├── datus-oracle
 ```
 
 ## Implemented Adapters
@@ -104,6 +105,23 @@ pip install datus-clickzetta
 - Volume/Stage file operations
 - Metadata discovery
 - Connection pooling and session management
+
+---
+
+### 6. datus-oracle
+Oracle database adapter powered by python-oracledb.
+
+**Installation**:
+```bash
+pip install datus-oracle
+```
+
+**Features**:
+- Native python-oracledb connectivity (service name or SID)
+- Table, view, and materialized view metadata discovery
+- DDL extraction through DBMS_METADATA
+- CSV, pandas, Arrow, and streaming result formats
+- Oracle-specific error handling mapped to Datus error codes
 
 ---
 
