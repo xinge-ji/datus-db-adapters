@@ -10,6 +10,7 @@ from urllib.parse import quote_plus
 import oracledb
 from datus.schemas.base import TABLE_TYPE
 from datus.utils.constants import DBType
+from datus.utils.exceptions import DatusException, ErrorCode
 from datus.utils.loggings import get_logger
 from datus_sqlalchemy import SQLAlchemyConnector
 from sqlalchemy import text
