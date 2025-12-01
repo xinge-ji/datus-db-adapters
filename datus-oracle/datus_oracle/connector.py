@@ -426,17 +426,17 @@ class OracleConnector(SQLAlchemyConnector):
 
     @override
     def test_connection(self) -> bool:
-        """Test the database connection."""
-        opened_here = self.connection is None
+        """Test database connection."""
+        self.connect()
         try:
-            self.connect()
-            self.connection.execute("SELECT 1 FROM DUAL").fetchone()
+            self._execute_query("SELECT 1 FROM DUAL")
             return True
         except Exception as e:
+            self._safe_close()
+            if isinstance(e, DatusException):
+                raise
             raise DatusException(
-                ErrorCode.DB_CONNECTION_FAILED,
-                message_args={"error_message": str(e)},
+                ErrorCode.DB_CONNECTION_FAILED, message_args={"error_message": "Connection test failed"}
             ) from e
         finally:
-            if opened_here:
-                self.close()
+            self._safe_close()
